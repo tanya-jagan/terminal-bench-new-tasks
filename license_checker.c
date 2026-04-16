@@ -1,8 +1,6 @@
 /*
  * licensechecker.c
  *
- * License key validation for "TerminalBench Pro".
- *
  * Algorithm overview (NOT included in the binary — agent must reverse this):
  *
  *  A license key has the form:  XXXXX-XXXXX-XXXXX-XXXXX
@@ -34,8 +32,6 @@
  *
  *  If all checks pass: print "License valid." and exit 0.
  *  Otherwise:          print "License invalid." and exit 1.
- *
- *  This source file is NOT shipped. Only the compiled binary is provided.
  */
 
 #include <stdio.h>
