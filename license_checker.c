@@ -1,38 +1,4 @@
-/*
- * licensechecker.c
- *
- * Algorithm overview (NOT included in the binary — agent must reverse this):
- *
- *  A license key has the form:  XXXXX-XXXXX-XXXXX-XXXXX
- *  where each X is an uppercase letter or digit (base-36 character set).
- *
- *  Validation steps:
- *
- *  1. Strip dashes. Concatenate the four groups into a 20-character string S.
- *
- *  2. Compute a username hash H:
- *       H = 0
- *       for each character c in username:
- *           H = (H * 31 + c) & 0xFFFFFFFF
- *
- *  3. Decode S as a base-36 number into a 64-bit integer K.
- *     (characters: 0-9 -> 0-9, A-Z -> 10-35)
- *
- *  4. Extract fields from K:
- *       version   = (K >> 60) & 0xF         // top 4 bits — must equal 3
- *       checksum  = (K >> 48) & 0xFFF        // next 12 bits
- *       user_hash = (K >> 16) & 0xFFFFFFFF   // next 32 bits
- *       serial    = K & 0xFFFF               // bottom 16 bits
- *
- *  5. Validate:
- *       a. version == 3
- *       b. user_hash == H  (the username hash computed in step 2)
- *       c. checksum == ( (H ^ serial ^ 0xA5F3) * 0x9E37 ) & 0xFFF
- *       d. serial must not be zero
- *
- *  If all checks pass: print "License valid." and exit 0.
- *  Otherwise:          print "License invalid." and exit 1.
- */
+// NOT included in binary
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -120,3 +86,4 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 }
+

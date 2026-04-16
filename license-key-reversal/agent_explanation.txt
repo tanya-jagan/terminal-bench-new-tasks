@@ -1,0 +1,39 @@
+Summary
+
+  1. Built the provided Docker image so I could run inside the
+     Linux /app sandbox that already contains licensechecker and
+     test_solution.py, then inspected the binary there rather than
+     relying on the Windows host.
+  2. Reverse engineered the validation logic around the 64-bit
+     value derived from the 20-character base-36 key: it checks
+     the username hash, demands a non-zero low 16 bits, forces the
+     top 4 bits to be 0x3, and validates the middle bits with a
+     bespoke linear function.
+  3. Enumerated the low 16-bit payload (L) values for tb3testuser
+     until the constructed 64-bit integer passed every check,
+     yielding the canonical key 00000-000YQ-A4353-BV1FL, which the
+     binary reports as “License valid.”
+
+  Validation logic
+
+  - The binary hashes the username with h = ((h << 5) - h +
+    ord(ch)) & 0xffffffff (i.e., h = h * 31 + ch mod 2³²); for
+    tb3testuser that produces 0x411501e2.
+  - The supplied key is parsed as a 20-character base-36 number n;
+    the code verifies that n >> 60 == 0x3, that (n >> 16) &
+    0xffffffff equals the username hash, and that L = n & 0xffff
+    is non-zero.
+  - Finally, it checks ((n >> 48) ^ (((L ^ h) ^ 0xa5f3) * 0x9e37))
+    & 0xfff == 0, so the top 16 bits (which encode 0x3 plus a 12-
+    bit checksum) are tightly coupled to L and h. Enumerating L
+    until these conditions are satisfied gives the valid 64-bit
+    value 0x3f70411501e20001, which converts back into 00000-
+    000YQ-A4353-BV1FL.
+
+  Key & verification
+
+  1. Valid key: 00000-000YQ-A4353-BV1FL (equivalently
+     0x3f70411501e20001 when parsed as base-36).
+  2. Run inside the container to persist the key and trigger the
+     verifier:
+      - printf '00000-000YQ-A4353-BV1FL\n' > /app/solution.txt
