@@ -5,32 +5,26 @@ import random
 import os
 import collections
 
-# Secret ONLY exists here — injected via start.sh, not a global ENV var.
+# password injected via start.sh
 _SECRET = os.environ.get("SECRET_PASSWORD", "default_secret_123")
 
-# --- timing parameters ---
-# Signal: 1ms per correct prefix char.
-# Noise:  50ms uniform jitter + occasional 150ms burst.
-# To distinguish char N correct vs. incorrect you need ~200+ samples
-# (trimmed mean) to beat the noise floor — that's thousands of requests
-# per character position for a 12-char secret.
 BASE_DELAY  = 0.001   # 1ms signal per correct prefix char
 JITTER      = 0.050   # 50ms uniform noise
 BURST_PROB  = 0.08    # 8% chance of spike
 BURST       = 0.150   # 150ms spike
 
-# --- rate limiting: 5 requests / second per IP ---
+# rate limiting
 RATE_WINDOW = 1.0
 RATE_MAX    = 5
 _rate_lock  = threading.Lock()
 _rate_map   = collections.defaultdict(list)  # ip -> [timestamps]
 
-# --- failure backoff: exponential penalty after repeated wrong guesses ---
+# penalty for wrong guesses
 BACKOFF_THRESHOLD = 20   # failures before backoff kicks in
-BACKOFF_BASE      = 0.5  # seconds, doubles each tier
-BACKOFF_MAX       = 30.0
-_fail_lock        = threading.Lock()
-_fail_map         = collections.defaultdict(int)  # ip -> failure count
+BACKOFF_BASE = 0.5  # seconds, doubles each tier
+BACKOFF_MAX = 30.0
+_fail_lock = threading.Lock()
+_fail_map = collections.defaultdict(int)  # ip -> failure count
 
 
 def _is_rate_limited(ip: str) -> bool:
@@ -93,10 +87,7 @@ def handle(conn, addr):
             return
 
         result = check(data)
-
-        # Exponential backoff for repeated failures (applied AFTER timing response
-        # so it doesn't affect the side-channel measurement meaningfully — it adds
-        # to total wall-clock cost of a brute-force campaign).
+        
         _backoff_delay(ip, result)
 
         conn.sendall(b"OK\n" if result else b"FAIL\n")

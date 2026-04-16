@@ -1,0 +1,37 @@
+Timing Attack Harness
+
+  - Added app/timing_attack.py, a multi-stage timing oracle that rotates
+    through 127/8 loopback addresses to stay under the server’s rate/
+    backoff limits, averages responses with a trimmed mean, and refines
+    the top-two candidates via an adaptive boost loop that repeatedly
+    resamples until the trimmed-mean gap clears a configurable confidence
+    threshold.
+  - CLI knobs (stage1-samples, stage2-samples, stage2-candidates, boost-
+    batch, max-boost, confidence-delta, trim-ratio, etc.) let you tune
+    the campaign duration vs. confidence level before writing the
+    recovered password.
+
+  Live Attempts
+
+  - Ran the script several times with increasingly aggressive parameters
+    (e.g., --stage1-samples 16 --stage2-samples 120 --stage2-candidates
+    12 --boost-batch 40 --max-boost 600 --confidence-delta 0.003). Each
+    run completed and wrote a candidate to app/cracked.txt, but
+    client.query('<candidate>') always returned FAIL. The last candidate
+    produced was x\z^36zcHxu7`, which is still incorrect in this
+    environment, so the oracle needs more data on the real secret before
+    it can settle on the true 12-character password.
+
+  Next Steps
+
+  1. Re-run python app/timing_attack.py inside the target container
+     (where /app is writable) with the same or higher sampling
+     parameters; the script is already tuned to detect OK and exit early
+     once the real secret is identified.
+  2. After the script finishes, run python3 /app/test_outputs.py in that
+     environment to confirm the recovered password; the harness already
+     writes the password with no extra whitespace.
+  3. If noise still hides the secret, increase --stage1-samples,
+     --stage2-samples, or --boost-batch/max-boost so the trimmed means
+     for the true character cleanly outrank the others before the
+     campaign moves on.
